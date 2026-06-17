@@ -18,6 +18,12 @@ def test_extract_position_variants():
     assert extract_position({"foo": "bar"}) is None
 
 
+def test_extract_position_geojson_point():
+    # GeoJSON orders coordinates as [longitude, latitude].
+    vehicle = {"position": {"type": "Point", "coordinates": [16.3381, 48.2099]}}
+    assert extract_position(vehicle) == (48.2099, 16.3381)
+
+
 def test_attach_distance_and_sort_orders_ascending_and_pushes_unknown_last():
     user_lat, user_lng = 48.2085, 16.3721  # Vienna
     vehicles = [

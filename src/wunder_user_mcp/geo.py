@@ -11,7 +11,23 @@ _EARTH_RADIUS_KM = 6371.0088
 # The first matching pair wins. Confirmed/extended against live responses on first run.
 _LAT_KEYS = ("lat", "latitude")
 _LNG_KEYS = ("lng", "lon", "longitude")
-_NESTED_POSITION_KEYS = ("position", "location", "coordinates")
+_NESTED_POSITION_KEYS = ("position", "location", "coordinates", "geometry")
+
+
+def _from_geojson(obj: dict[str, Any]) -> tuple[float, float] | None:
+    """Extract (lat, lng) from a GeoJSON Point-like dict.
+
+    GeoJSON orders coordinates as [longitude, latitude].
+    """
+    coords = obj.get("coordinates")
+    if (
+        isinstance(coords, (list, tuple))
+        and len(coords) >= 2
+        and all(isinstance(c, (int, float)) for c in coords[:2])
+    ):
+        lng, lat = float(coords[0]), float(coords[1])
+        return lat, lng
+    return None
 
 
 def haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
@@ -49,6 +65,9 @@ def extract_position(vehicle: dict[str, Any]) -> tuple[float, float] | None:
             lng = _coord(nested, _LNG_KEYS)
             if lat is not None and lng is not None:
                 return lat, lng
+            geojson = _from_geojson(nested)
+            if geojson is not None:
+                return geojson
     return None
 
 
