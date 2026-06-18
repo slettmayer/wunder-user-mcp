@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import Any, Literal
 
 import httpx
 from mcp.server.fastmcp import FastMCP
@@ -13,7 +13,31 @@ from wunder_user_mcp.client import WunderClient
 from wunder_user_mcp.config import Settings, load_settings
 from wunder_user_mcp.geo import attach_distance_and_sort
 
-mcp = FastMCP("wunder-user-mcp")
+SERVER_INSTRUCTIONS = """\
+Tools for the Wunder Mobility v2 end-user (User) API. Every call acts on behalf of a
+single signed-in end user (authenticated from a refresh token configured on the server);
+there is no user/account parameter and you cannot switch users.
+
+Typical flow:
+  1. get_vehicles to find a vehicle (pass the user's latitude/longitude to get
+     distance-sorted results).
+  2. create_rental to reserve (RESERVATION) or immediately start (ACTIVE) a rental for a
+     chosen vehicle.
+  3. rental_command to operate the rental (START / PARK / DRIVE / END / OPEN_TAILBOX / ...).
+  4. get_active_rental any time to see the current ongoing rental(s) and get the
+     rental_id needed by rental_command.
+
+Key constraints:
+- A user can have only ONE active rental at a time; creating another while one is ACTIVE
+  is rejected by the API. Call get_active_rental before creating a new rental.
+- create_rental (especially start_rental_state=ACTIVE) and rental_command END are
+  high-impact: they trigger vehicle commands, pricing, payment authorization/capture,
+  deposits, and invoices. Confirm intent before issuing them.
+- Errors are surfaced verbatim from the API, including the Wunder errorCode and
+  userMessage; relay those to the user rather than guessing.
+"""
+
+mcp = FastMCP("wunder-user-mcp", instructions=SERVER_INSTRUCTIONS)
 
 # Lazily-built, event-loop-bound singletons. Settings are validated eagerly in main().
 _settings: Settings | None = None
@@ -156,7 +180,7 @@ async def rental_command(
 async def create_rental(
     vehicle_id: int | None = None,
     vehicle_code: str | None = None,
-    start_rental_state: str = "RESERVATION",
+    start_rental_state: Literal["RESERVATION", "ACTIVE"] = "RESERVATION",
     additions: list[str] | None = None,
     user_group_code: str | None = None,
     rental_type: str | None = None,
