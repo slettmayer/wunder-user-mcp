@@ -45,7 +45,7 @@ Constructed as `TokenManager(settings, http)` and held by `WunderClient`. State:
 - **Single-flight via double-checked lock**: prevents a thundering herd of refresh calls when many tool invocations arrive while the token is expired.
 
 ## Known Risks
-- Refresh-token rotation is in-memory only; a long-lived process relies on the latest rotated token, while a restart falls back to the env-configured one. If the backend invalidates old refresh tokens on rotation, a restart after rotation could fail until the env var is updated. <!-- Needs validation: does the Wunder API invalidate the prior refresh token on rotation? -->
+- Refresh-token rotation is in-memory only; a long-lived process uses the latest rotated token, while a restart falls back to the env-configured one. This is safe: the Wunder API does **not** invalidate the prior refresh token on rotation, so the env-configured token keeps working across restarts.
 - `_safe_error_detail` is imported from `auth.py` into `client.py` (a private cross-module import) — see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Extension Guidelines
