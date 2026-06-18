@@ -39,15 +39,35 @@ response into `WUNDER_REFRESH_TOKEN`.
 
 ## Run
 
-```bash
-# from a checkout
-uv run wunder-user-mcp
+Run straight from the GitHub repo — no clone and no PyPI publish required (`uvx` builds
+from the Git source):
 
-# or without cloning, straight from the directory
-uvx --from . wunder-user-mcp
+```bash
+uvx --from git+https://github.com/slettmayer/wunder-user-mcp wunder-user-mcp
 ```
 
-The server speaks MCP over **stdio**.
+Pin a branch, tag, or commit for stability by appending `@<ref>`:
+
+```bash
+uvx --from git+https://github.com/slettmayer/wunder-user-mcp@main wunder-user-mcp
+```
+
+`uvx` caches the build, so to pick up new commits on a moving ref (e.g. `@main`) add
+`--refresh`:
+
+```bash
+uvx --refresh --from git+https://github.com/slettmayer/wunder-user-mcp@main wunder-user-mcp
+```
+
+From a local checkout (development):
+
+```bash
+uv run wunder-user-mcp        # editable install, reflects local edits
+uvx --from . wunder-user-mcp  # build from the current directory
+```
+
+In all cases `WUNDER_REFRESH_TOKEN` and `WUNDER_TENANT` must be set in the environment
+(see [Configuration](#configuration)). The server speaks MCP over **stdio**.
 
 ## MCP client configuration
 
@@ -56,16 +76,26 @@ The server speaks MCP over **stdio**.
   "mcpServers": {
     "wunder-user": {
       "command": "uvx",
-      "args": ["--from", "/path/to/wunder-user-mcp", "wunder-user-mcp"],
+      "args": [
+        "--from",
+        "git+https://github.com/slettmayer/wunder-user-mcp",
+        "wunder-user-mcp"
+      ],
       "env": {
         "WUNDER_REFRESH_TOKEN": "<refresh-token>",
         "WUNDER_TENANT": "<tenant-code>",
+        "WUNDER_BASE_URL": "https://go-staging.api.gourban.services/v1",
         "WUNDER_BRANCH_ID": "<optional-branch-id>"
       }
     }
   }
 }
 ```
+
+`WUNDER_BASE_URL` defaults to production (`https://go.api.gourban.services/v1`); the
+value above targets **staging** (`go-staging`). Set it to match your tenant's environment
+— a staging tenant on the production host returns `404`. To pin a ref, append `@<ref>` to
+the URL, e.g. `git+https://github.com/slettmayer/wunder-user-mcp@main`.
 
 ## Development
 
